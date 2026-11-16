@@ -1,0 +1,42 @@
+"""
+Async configuration and endpoint health utility for IoT and web backends.
+Author: Martin Kořínek
+License: MIT
+"""
+
+import asyncio
+import logging
+import aiohttp
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logger = logging.getLogger(__name__)
+
+async def check_endpoint_health(session: aiohttp.ClientSession, url: str, timeout: int = 5) -> bool:
+    """Asynchronously checks if a target API endpoint or IoT service is reachable."""
+    try:
+        async with session.get(url, timeout=timeout) as response:
+            if response.status == 200:
+                logger.info(f"Endpoint {url} is healthy (Status 200).")
+                return True
+            logger.warning(f"Endpoint {urlreturned status {response.status}.")
+            return False
+    except asyncio.TimeoutError:
+        logger.error(f"Timeout while connecting to {url}.")
+        return False
+    except Exception as e:
+        logger.error(f"Failed to connect to {url}: {e}")
+        return False
+
+async def batch_check(endpoints: list[str]) -> dict[str, bool]:
+    """Runs concurrent health checks across multiple service endpoints."""
+    async with aiohttp.ClientSession() as session:
+        tasks = [check_endpoint_health(session, url) for url in endpoints]
+        results = await asyncio.gather(*tasks)
+        return dict(zip(endpoints, results))
+
+if __name__ == "__main__":
+    test_endpoints = [
+        "http://127.0.0.1:8000/api/health",
+        "https://httpbin.org/status/200"
+    ]
+    asyncio.run(batch_check(test_endpoints))
